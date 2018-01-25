@@ -1,0 +1,14 @@
+---
+title: "For Loop Homework"
+author: "Michael Kozel, Ross Ian Walker, Qi Hao"
+date: "January 25, 2018"
+output: html_document
+---
+
+Using only for loops and if blocks, write out the R code necessary to print only the elements from the values vector that are not prime.
+
+```{r}
+
+```
+
+
