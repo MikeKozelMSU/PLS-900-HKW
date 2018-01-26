@@ -5,10 +5,19 @@ date: "January 25, 2018"
 output: html_document
 ---
 
-Using only for loops and if blocks, write out the R code necessary to print only the elements from the values vector that are not prime.
+Problem: Using only for loops and if blocks, write out the R code necessary to print only the elements from the values vector that are not prime.
 
+The following solution begins with a copy of the original values (i.e., 'values2'). Nested for loops detect matches between each element of 'values' and each element of 'primes'. When a match is found, the corresponding value is removed from the 'values2' vector leaving only non-prime values.
 ```{r}
-
+primes <- c(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97)
+values <- c(3, 4, 12, 19, 23, 48, 50, 61, 63, 78)
+values2 <-c(3, 4, 12, 19, 23, 48, 50, 61, 63, 78)
+for (value in values){
+  for (prime in primes){
+    if (value==prime){
+      values2 <- values2[-which(values2==value)]
+    }
+  }
+}
+values2
 ```
-
-
