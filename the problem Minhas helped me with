@@ -1,0 +1,20 @@
+#### Wrong one
+movielist <- list()
+moviesnames <- c("batman","bb","SofL")
+for (i in length(moviesnames)){
+  alist <- list(villains = c("a"), heros = c("b"), Auxi = c("c"))
+  movielist[[i]] <-  alist
+}
+names(movielist) <- moviesnames
+movielist
+
+
+#### correct one
+movielist <- list()
+moviesnames <- c("batman","bb","SofL")
+for (i in 1:length(moviesnames)){
+  alist <- list(villains = c("a"), heros = c("b"), Auxi = c("c"))
+  movielist[[i]] <-  alist
+}
+names(movielist) <- moviesnames
+movielist
