@@ -1,0 +1,11 @@
+# load('polity_vectors.rda')
+d16f = democ_2016
+d16f[d16f == 0]      <- "Not a democracy"
+d16f[d16f %in% 1:3]  <- "Weak democracy"
+d16f[d16f %in% 4:6]  <- "Middle democracy"
+d16f[d16f %in% 7:10] <- "High democracy"
+d16f <- factor(d16f, 
+               levels=c("Not a democracy", "Weak democracy", 
+                        "Middle democracy", "High democracy"))
+attributes(d16f)$levels <-
+  c("Not a democracy", "Ambiguous", "Ambiguous", "High democracy")
