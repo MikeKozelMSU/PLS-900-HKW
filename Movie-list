@@ -41,3 +41,18 @@ for(i in 1:length(movie_list)){
   )
   
 }
+
+#-----------------------------------------------------------
+# Here's an alternate using two loops
+
+movie_list = list()
+titles = c("Breaking Bad", "Silence of the Lambs", "Batman")
+char_types = c("villains", "heroes", "ancillary")
+for(i in 1:length(characters_list)){
+  for(j in 1:length(char_types)){
+  movie_list[[titles[i]]][[char_types[j]]] = list(
+      names  = characters_list[[char_types[j]]][['names']][i],
+      values = characters_list[[char_types[j]]][['value']][i]
+      )
+  }
+}
