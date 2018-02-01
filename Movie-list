@@ -1,0 +1,43 @@
+characters_list <-list(
+  villains=list(
+    names=c('Walter White','Hannibal','Joker'),
+    value=round(rnorm(3),2)
+    ),
+  heroes=list(
+    names=c('Hank Schrader','Clarice','Batman'),
+    value=round(rnorm(3),2)))
+
+characters_list$ancillary <-list(
+  names=c('Aaron Paul','Crawford','Dawes'),
+  value=round(rnorm(3,2)))
+
+
+for(i in character_list){
+  if(characters_list[[1]][[1]])
+}
+
+i=1
+villain=characters_list[[1]][[1]][i]
+value=characters_list[[1]][[1]][i]
+
+hero=characters_list[[1]][[2]][i]
+value=characters_list[[1]][[2]][i]
+movie_list <- list('bb', 'sl', 'ba')
+
+for(i in 1:length(movie_list)){
+  movie_list[[i]] = list(
+    villain=list(
+      name=characters_list[[1]][[1]][i], 
+      value=characters_list[[1]][[2]][i]      
+    ),
+    hero=list(
+      name=characters_list[[2]][[1]][i],
+      value=characters_list[[2]][[2]][i]  
+    ),
+    ancillary=list(
+      name=characters_list[[3]][[1]][i],
+      value=characters_list[[3]][[2]][i]
+    )
+  )
+  
+}
