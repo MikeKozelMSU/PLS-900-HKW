@@ -1,0 +1,60 @@
+---
+title: "HOMEWORK 2.8"
+author: "Qi Hao"
+date: "2/8/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+####   Question 1. 
+
+#generate pseudo dataset
+library(MASS) 
+set.seed(6886) 
+data = mvrnorm(
+  n=100, mu=c(-2, 3), Sigma=matrix(c(8,3,3,2),nrow=2,ncol=2) )
+colnames(data) = c('y','x')
+
+my_lm <- function(y, x){
+  x0 <- rep(1, 100)
+  X <- cbind(x0,x)
+  betahat <- solve( t(X) %*% X ) %*% t(X)%*%y
+  error <- y-X %*% betahat[,1]
+  # calculate the variance-covariance matrix for betahat
+  var_over_df <- t(error) %*% error/98
+  COVbetahat <- var_over_df[1,1]*solve(t(X)%*% X)
+  # calculate the beta coefficients and their standard errors
+  serror <- sqrt(diag(COVbetahat))
+  coefs <-cbind(betahat,serror)
+  #rename col names of the out put
+  colnames(coefs) <- c("coef","serror")
+  result <- list(coefs = coefs, varcov = COVbetahat)
+  return(result)
+}
+my_lm(data[,1],data[,2])
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
