@@ -1,0 +1,79 @@
+---
+title: "Week 4 - Advanced R Exercises"
+author: "Ross Walker, Qi Hao, Mike Kozel"
+date: "2/13/2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Structures (Exercise Group #1)
+
+## 1. What are the size types of atomic vector? How does a list differ from an atomic vector?
+1. logical
+2. integer
+3. double
+4. character
+5. complex
+6. raw
+
+Lists can hold different types of data while atomic vectors can only hold one type.
+
+## 2. What makes is.vector() and is.numeric() fundamentally different to is.list() and is.character()?
+
+Neither is.vector() nor is.numeric() test for particular objects. is.vector() only tests for vectors with only name attributes and is.numeric() tests for both integer and double objects. Conversely, is.list() does test for whether or not the object is a vector, and as.character() tests whether it's a character.
+
+## 3. Test your knowledge of vector coercion rules by predicting the output of the following uses of c():
+
+```{r}
+c(1, FALSE)  # double
+c("a", 1)  # character
+c(list(1), "a")  # list
+c(TRUE, 1L)  # integer
+```
+
+## 4. Why do you need to use unlist() to convert a list to an atomic vector? Why doesn’t as.vector() work?
+
+Lists can be recirsive and unlist() collapses across levels.
+
+## 5. Why is 1 == "1" true? Why is -1 < FALSE true? Why is "one" < 2 false?
+
+- "1" is the result of coercing the integer 1 to a character
+- The logical 'FALSE' coerces to integer 0, and -1 is less than 0.
+- "one" is not the coercion of the integer 1 to character, so the comparison is false.
+
+## 6. Why is the default missing value, NA, a logical vector? What’s special about logical vectors? (Hint: think about c(FALSE, NA_character_).)
+
+- NA is logical be default to avoid coercing logicals into characters (since logicals are the least flexible type).
+
+# Data Structures (Exercise Group #2)
+
+## 1. An early draft used this code to illustrate structure(): But when you print that object you don’t see the comment attribute. Why? Is the attribute missing, or is there something else special about it? (Hint: try using help.)
+
+```{r}
+structure(1:5, comment = "my attribute")
+```
+
+Attributes like this must be accessed specially with attributes() or comment().
+
+## 2. What happens to a factor when you modify its levels?
+
+```{r}
+f1 <- factor(letters)
+levels(f1) <- rev(levels(f1))
+```
+
+Here, reversing the order of the factors also reverses the order of the data.
+
+## 3. What does this code do? How do f2 and f3 differ from f1?
+
+```{r}
+f2 <- rev(factor(letters))
+f3 <- factor(letters, levels = rev(letters))
+```
+
+f2 reverses the order of the data, not the order of the factors. f3 reverses the factors but leaves the order of the data untouched.

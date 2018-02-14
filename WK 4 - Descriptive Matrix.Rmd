@@ -1,0 +1,36 @@
+---
+title: "Week 4 - Descriptive Matrix"
+author: "Ross Walker, Qi Hao, Mike Kozel"
+date: "2/13/2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Descriptive Matrix
+
+Slide 38/39: Generate descriptive statistics for four numeric variables in polity_dataframe.rda (i.e., democ, autoc, polity2, and xconst). The output should be a matrix with the descriptive statistics names as row attributes and the 4 variables named as column attitributes.
+
+```{r}
+load("~/Downloads/polity_dataframe.rda")
+sub <- polity[, c("democ", "autoc", "polity2", "xconst")]
+stats <- function(x){
+  return(c(
+  n = length(x),
+  numberNA = sum(is.na(x)),
+  mean = mean(x, na.rm = T),
+  median = median(x, na.rm = T),
+  stdev = sd(x, na.rm = T),
+  max = max(x, na.rm = T),
+  min = min(x, na.rm = T)
+  ))
+}
+summaries <- sapply(sub, stats)
+summaries_rounded <- apply(summaries, 2, round, 2)
+summaries_rounded
+str(summaries_rounded)
+```

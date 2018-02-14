@@ -1,0 +1,27 @@
+---
+title: "Week 4 - Data Frame"
+author: "Ross Walker, Qi Hao, Mike Kozel"
+date: "2/13/2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Frame Creation
+
+Slide 37: Create a data frame with a patient ID number, gender, and 3 binary (yes/no) treatment variables.
+
+```{r}
+data.frame(
+  'Patient'     = 1:16, 
+  'Gender'      = rep(c("Male", "Female"), each = 8),
+  'Treatment 1' = rep(c("Yes", "No"), each = 4, times = 2),
+  'Treatment 2' = rep(c("Yes", "No"), each = 2, times = 4),
+  'Treatment 3' = rep(c("Yes", "No"), times = 8),
+  stringsAsFactors = FALSE
+)
+```
