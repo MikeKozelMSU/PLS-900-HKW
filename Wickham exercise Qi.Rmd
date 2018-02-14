@@ -1,0 +1,71 @@
+---
+title: "Wickham exercise"
+author: "Qi Hao"
+date: "2/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### 1. what does dim() return when applied to a vector
+```{r}
+### it returns a vector
+a <- rep(1,4)
+dim(a) <- c(2,2)
+class(a)
+### Or an array
+a <- rep(1,8)
+dim(a) <- c(2,2,2)
+class(a)
+```
+
+### 2. If is.matrix(x) is TRUE, what will is.array(x) return?
+```{r}
+### if is.matrix(x) is TRUE, is.array(x) would also return TRUE because matrix is a special kind of array
+b <- matrix(1:4, nrow = 2, ncol = 2)
+is.matrix(b)
+is.array(b)
+```
+
+### 3. How would you describe the following three objects? What makes them different to 1:5?
+```{r}
+x1 <- array(1:5, c(1, 1, 5)) ### is a three dimension array, with 1:5 listed in the third dimension
+x2 <- array(1:5, c(1, 5, 1)) ### is a three dimension array, with 1:5 listed in the second dimension
+x3 <- array(1:5, c(5, 1, 1)) ### is a three dimension array, with 1:5 listed in the first dimension
+### x1, x2, x3 differ from a vector 1:5 in that they have multiple dimensions although some of the diemsnions are contracted
+```
+
+### 1. What attributes does a data frame possess?
+```{r}
+### a data frame has attributes of colnames, rownames and class. for example:
+dfm <- data.frame(x = 1:3, y = I(matrix(1:9, nrow = 3)))
+attributes(dfm)
+```
+
+### 2. What does as.matrix() do when applied to a data frame with columns of different types?
+```{r}
+### it coercises the matrix into same type. For example, there is both integer and string, all is turned into string.
+good <- data.frame(a = 1:2, b = c("a", "b"),
+                   stringsAsFactors = FALSE)
+bad <- as.matrix(good)
+typeof(bad)
+```
+
+### 3. Can you have a data frame with 0 rows? What about 0 columns?
+```{r}
+### Yes you can. see below
+zerodf <- data.frame(x = c(), y = c())
+zerodf
+```
+
+### 1. Given a linear model, e.g., mod <- lm(mpg ~ wt, data = mtcars), extract the residual degrees of freedom. Extract the R squared from the model summary (summary(mod))
+```{r}
+mod <- lm(mpg ~ wt, data = mtcars)
+str(summary(mod))
+### extract residual degree of freedom
+summary(mod)$df[2]
+### extract the R squared
+summary(mod)$r.squared
+```
