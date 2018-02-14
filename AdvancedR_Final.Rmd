@@ -1,0 +1,239 @@
+---
+title: "Advanced R Problems"
+author: "Ross Walker, Qi Hao, Mike Kozel"
+date: "February 15, 2018"
+output: html_document
+---
+
+# Data Structures (Exercise Group #1)
+
+## 1. What are the size types of atomic vector? How does a list differ from an atomic vector?
+1. logical
+2. integer
+3. double
+4. character
+5. complex
+6. raw
+
+Lists can hold different types of data while atomic vectors can only hold one type.
+
+## 2. What makes is.vector() and is.numeric() fundamentally different to is.list() and is.character()?
+
+Neither is.vector() nor is.numeric() test for particular objects. is.vector() only tests for vectors with only name attributes and is.numeric() tests for both integer and double objects. Conversely, is.list() does test for whether or not the object is a vector, and as.character() tests whether it's a character.
+
+## 3. Test your knowledge of vector coercion rules by predicting the output of the following uses of c():
+
+```{r}
+c(1, FALSE)  # double
+c("a", 1)  # character
+c(list(1), "a")  # list
+c(TRUE, 1L)  # integer
+```
+
+## 4. Why do you need to use unlist() to convert a list to an atomic vector? Why doesn't as.vector() work?
+
+Lists can be recirsive and unlist() collapses across levels.
+
+## 5. Why is 1 == "1" true? Why is -1 < FALSE true? Why is "one" < 2 false?
+
+- "1" is the result of coercing the integer 1 to a character
+- The logical 'FALSE' coerces to integer 0, and -1 is less than 0.
+- "one" is not the coercion of the integer 1 to character, so the comparison is false.
+
+## 6. Why is the default missing value, NA, a logical vector? What's special about logical vectors? (Hint: think about c(FALSE, NA_character_).)
+
+- NA is logical be default to avoid coercing logicals into characters (since logicals are the least flexible type).
+
+# Data Structures (Exercise Group #2)
+
+## 1. An early draft used this code to illustrate structure(): But when you print that object you don't see the comment attribute. Why? Is the attribute missing, or is there something else special about it? (Hint: try using help.)
+
+```{r}
+structure(1:5, comment = "my attribute")
+```
+
+Attributes like this must be accessed specially with attributes() or comment().
+
+## 2. What happens to a factor when you modify its levels?
+
+```{r}
+f1 <- factor(letters)
+levels(f1) <- rev(levels(f1))
+```
+
+Here, reversing the order of the factors also reverses the order of the data.
+
+## 3. What does this code do? How do f2 and f3 differ from f1?
+
+```{r}
+f2 <- rev(factor(letters))
+f3 <- factor(letters, levels = rev(letters))
+```
+
+f2 reverses the order of the data, not the order of the factors. f3 reverses the factors but leaves the order of the data untouched.
+
+### 1. what does dim() return when applied to a vector
+```{r}
+### it returns a vector
+a <- rep(1,4)
+dim(a) <- c(2,2)
+class(a)
+### Or an array
+a <- rep(1,8)
+dim(a) <- c(2,2,2)
+class(a)
+```
+
+### 2. If is.matrix(x) is TRUE, what will is.array(x) return?
+```{r}
+### if is.matrix(x) is TRUE, is.array(x) would also return TRUE because matrix is a special kind of array
+b <- matrix(1:4, nrow = 2, ncol = 2)
+is.matrix(b)
+is.array(b)
+```
+
+### 3. How would you describe the following three objects? What makes them different to 1:5?
+```{r}
+x1 <- array(1:5, c(1, 1, 5)) ### is a three dimension array, with 1:5 listed in the third dimension
+x2 <- array(1:5, c(1, 5, 1)) ### is a three dimension array, with 1:5 listed in the second dimension
+x3 <- array(1:5, c(5, 1, 1)) ### is a three dimension array, with 1:5 listed in the first dimension
+### x1, x2, x3 differ from a vector 1:5 in that they have multiple dimensions although some of the diemsnions are contracted
+```
+
+### 1. What attributes does a data frame possess?
+```{r}
+### a data frame has attributes of colnames, rownames and class. for example:
+dfm <- data.frame(x = 1:3, y = I(matrix(1:9, nrow = 3)))
+attributes(dfm)
+```
+
+### 2. What does as.matrix() do when applied to a data frame with columns of different types?
+```{r}
+### it coercises the matrix into same type. For example, there is both integer and string, all is turned into string.
+good <- data.frame(a = 1:2, b = c("a", "b"),
+                   stringsAsFactors = FALSE)
+bad <- as.matrix(good)
+typeof(bad)
+```
+
+### 3. Can you have a data frame with 0 rows? What about 0 columns?
+```{r}
+### Yes you can. see below
+zerodf <- data.frame(x = c(), y = c())
+zerodf
+```
+
+### 1. Given a linear model, e.g., mod <- lm(mpg ~ wt, data = mtcars), extract the residual degrees of freedom. Extract the R squared from the model summary (summary(mod))
+```{r}
+mod <- lm(mpg ~ wt, data = mtcars)
+str(summary(mod))
+### extract residual degree of freedom
+summary(mod)$df[2]
+### extract the R squared
+summary(mod)$r.squared
+```
+
+
+
+
+# Subsetting
+
+## Exercise 1
+### Fix each of the following common data frame subsetting errors:
+#### mtcars[mtcars$cyl = 4, ]
+#### mtcars[-1:4, ]
+#### mtcars[mtcars$cyl <= 5]
+#### mtcars[mtcars$cyl == 4 | 6, ]
+```{r}
+mtcars[mtcars$cyl==4,] # added =
+mtcars[-(1:4)] #added () and removed ,
+mtcars[mtcars$cyl <= 5,] # added ,
+mtcars[mtcars$cyl == 4 | 6, ] # this worked.  Maybe something has changed in R but it worked.
+```
+
+## Exercise 2
+### Why does x <- 1:5; x[NA] yield five missing values? (Hint: why is it different from x[NA_real_]?)
+```{r}
+x <- 1:5; x[NA]
+```
+It returns five NAs because you are subsetting a vector of 1 through 5 by NA 
+
+## Exercise 3
+### What does upper.tri() return? How does subsetting a matrix with it work? Do we need any additional subsetting rules to describe its behaviour?
+```{r}
+x <- outer(1:5, 1:5, FUN = "*")
+x[upper.tri(x)]
+```
+using ?upper.tri it says that it returns a matrix of logiccals the same size of a given matrix with entries TRUE in the lower of or upper triangle.
+
+## Exercise 4
+### Why does mtcars[1:20] return an error? How does it differ from the similar mtcars[1:20, ]?
+
+```{r}
+mtcars[1:20, ]
+length(mtcars)
+class(mtcars)
+```
+
+Error in `[.data.frame`(mtcars, 1:20) : undefined columns selected.  The reason it gives an error is because it is trying to subset a dataframe by a vector that is longer than what the mtcars dataframe is. mtcars is only 11 long, not 20. adding the , after the 20 now subsets the dataframe like a matrix.
+
+
+## Exercise 5
+### Implement your own function that extracts the diagonal entries from a matrix (it should behave like diag(x) where x is a matrix).
+
+```{r}
+Fun <- function(x) {
+  stopifnot(is.matrix(x), nrow(x) == ncol(x))
+  n <- nrow(x)
+  return(x[matrix(seq_len(n), nrow = n, ncol = 2)])
+}
+```
+https://github.com/aammd/UBCadv-r/wiki/02:-Subsetting
+
+## Exercise 6
+### What does df[is.na(df)] <- 0 do? How does it work?
+
+It reurns an error that it is not subsettable. So it does not work
+
+## Exercise 7
+### Given a linear model, e.g., mod <- lm(mpg ~ wt, data = mtcars), extract the residual degrees of freedom. Extract the R squared from the model summary (summary(mod))
+```{r}
+mod <- lm(mpg ~ wt, data = mtcars)
+summary(mod)
+
+
+mod$df.residual
+```
+
+## Exercise 8
+### How would you randomly permute the columns of a data frame? (This is an important technique in random forests.) Can you simultaneously permute the rows and columns in one step?
+```{r}
+mtcars
+
+mtcars[setdiff(names(mtcars), "gear")] # replace gear with whatever column you wish to remove
+```
+
+## Exercise 9
+### How would you select a random sample of m rows from a data frame? What if the sample had to be contiguous (i.e., with an initial row, a final row, and every row in between)?
+```{r}
+df <- data.frame(x = rep(1:3, each = 2), y = 6:1, z = letters[1:6])
+df
+df[sample(nrow(df)), ]
+
+# you could also do
+# df[sample(nrow(df)), x]  <- where x represents the number of rows that you want to select
+```
+
+## Exercise 10
+### How could you put the columns in a data frame in alphabetical order?
+```{r}
+x <- c("b", "c", "a")
+order(x) # changes to numeric
+x[order(x)] # puts vector in alphabetical order
+
+mtcars 
+mtcars[order(names(mtcars))]
+
+```
+
+
