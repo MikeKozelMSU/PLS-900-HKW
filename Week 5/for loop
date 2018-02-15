@@ -1,0 +1,12 @@
+
+for(ii in 1:nfold){
+  slice= df[df$fold!=ii]
+  modSlice <- glm(dv - xNOrm +xCNT + xBin, family = 'binomial', data=slice)
+  
+  coefs[[ii]] = summary(modSlice)$'coeefficients'
+  
+  xOut = cbind(1, df[df$fold==ii, -c(1, ncol(df))])
+  outpreds = data.matrix(xOut) %*% coef(modslice)
+  probs = 1/(1+exp(~outpreds))
+  preds[[ii]] = data.frame(probs=probs, actual= df[df$fold=ii, 1])
+}
