@@ -1,0 +1,89 @@
+---
+title: "Week 5 HW Qi"
+author: "Qi Hao"
+date: "2/15/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### 1. use rbenchmark package to assess if there is any performance difference between using apply, sapply, lapply, and a for loop. 
+```{r }
+setwd("/Users/qihao/OneDrive/博三下/PLS900")
+load("polity_dataframe.rda")
+
+### write a function called functiona to do the descriptive data
+functiona <-function(alist){
+  n = length(alist)
+  numberNA = sum(is.na(alist))
+  b = mean(alist, na.rm = T)
+  c = median(alist, na.rm = T)
+  d = max(alist, na.rm = T)
+  e = min(alist, na.rm = T)
+  f = sd(alist, na.rm = T)
+  return(c(n,numberNA,b,c,d,e,f ))
+}
+
+### create a function for each of sapply, apply, lapply and for loop
+sapplydf <- function(adataframe){
+  df <- sapply(adataframe, functiona)
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+applydf <- function(adataframe){
+  df <- apply(adataframe, 2, functiona)
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+lapplydf <- function(adataframe){
+  df <- do.call(cbind, lapply(adataframe,functiona))
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+fordf <- function(avector){
+  df <- data.frame(democ = rep(0,7),autoc = rep(0,7), polity2 = rep(0,7), xconst = rep(0,7))
+  for (i in avector){
+    df[,i] <- functiona(polity[,i])
+}
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+### use benchmark to find out how they excel/suck
+library(rbenchmark)
+df <-polity[,c('democ','autoc','polity2','xconst')]
+avect <- c('democ','autoc','polity2','xconst')
+benchmark(replications = 10, fordf(avect),sapplydf(df),applydf(df),lapplydf(df))
+
+```
+#### use tapply and dplyr to calculate the mean, median, and stdev of democ and xconst for every year in the polity dataframe object
+```{r }
+library(dplyr)
+### in the slides Shahryar showed democ but in the instruction said polity2, not sure which one, just go with democ
+selecteddata <- group_by(polity[,c("year","democ","xconst")], year)
+### I figured once i use summarise_all, i don't have to use tapply
+by_year <- summarise_all(selecteddata, mean, na.rm = T)
+
+by_year_me <- summarise_all(selecteddata, median, na.rm = T)
+
+by_year_sd <- summarise_all(selecteddata, sd, na.rm = T)
+
+result <- cbind(by_year,by_year_me[,2:3])
+result <- cbind(result, by_year_sd[,2:3])
+colnames(result) <- c("year","democ_mean","xconst_mean","democ_median","xconst_median","democ_sd","xconst_sd")
+result
+```
+### Wickham functions 
+```{r }
+
+```
+### Wickham functional programming
+```{r }
+
+```
+## R Markdown
+
