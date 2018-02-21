@@ -1,0 +1,441 @@
+---
+title: "Week 5 - HWK"
+author: "Ross Walker, Qi Hao, Mike Kozel"
+date: "February 21, 2018"
+output: html_document
+---
+
+# Function components
+
+#### 1. What function allows you to tell if an object is a function? What function allows you to tell if a function is a primitive function?
+
+is.function() and is.primitive() test whether an object is in those classes.
+
+#### 2. This code makes a list of all functions in the base package.
+
+``` {r}
+objs <- mget(ls("package:base"), inherits = TRUE)
+funs <- Filter(is.function, objs)
+```
+
+* Which base function has the most arguments?
+
+```{r}
+arglengths <- sapply(funs, formals) %>%
+  sapply(length)
+arglengths[which(arglengths == max(arglengths))]
+```
+
+* How many base functions have no arguments? What's special about those functions?
+
+```{r}
+sum(arglengths == 0 | sapply(arglengths, is.null))
+```
+
+* How could you adapt the code to find all primitive functions?
+
+```{r}
+prim.funs <- Filter(is.primitive, objs)
+```
+
+#### 3. What are the three important components of a function?
+
+* body
+* formals
+* environment
+
+#### 4. When does printing a function not show what environment it was created in?
+
+When the function was created in the global environment.
+
+# Lexical scoping
+
+#### 1. What does the following code return? Why? What does each of the three c's mean?
+
+```{r}
+c <- 10
+c(c = c)
+```
+
+This returns a vector of length 1 with a numeric 10 and the name 'c'. The first c means that contents will be vector, and it also allows naming the element. The second c is the name and the third pulls the pre-defined object c from the global environment.
+
+#### 2. What are the four principles that govern how R looks for values?
+
+* name masking
+* functions vs. variables
+* a fresh start
+* synamic lookup
+
+### 3. What does the following function return? Make a prediction before running the code yourself.
+
+202
+
+# Function arguments
+
+### 1. Clarify the following list of odd function calls:
+
+```{r}
+x <- sample(replace = TRUE, 20, x = c(1:10, NA))
+```
+
+Samples 20 values from possible values c(1:10, NA) with replacement.
+
+```{r}
+y <- runif(min = 0, max = 1, 20)
+```
+
+Generates 20 values from a uniform distribution between 0 and 1.
+
+```{r}
+cor(m = "k", y = y, u = "p", x = x)
+```
+
+Calculates a pearson correaltion between x and y with pairwise deletion.
+
+#### 2. What does this function return? Why? Which principle does it illustrate?
+
+```{r}
+f1 <- function(x = {y <- 1; 2}, y = 0) {
+  x + y
+}
+f1()
+```
+
+It returns 3 since y is defined as 1 earlier in the function than when it's defined as 0. This exemplifies lazy evaluation.
+
+#### 3. What does this function return? Why? Which principle does it illustrate?
+
+```{r}
+f2 <- function(x = z) {
+  z <- 100
+  x
+}
+f2()
+```
+
+This returns 100 because once z has a value, the argument definition assigns that to x as well. This also exemplifies lazy evaluation.
+
+## Replacement Functions
+### Exercises
+#### 1. Create a list of all the replacement functions found in the base package. Which ones are primitive functions?
+```{r}
+objs <- mget(ls("package:base"), inherits = TRUE)
+funs <- Filter(is.function, objs)
+
+RepFunc <- sapply(funs, is.primitive)
+names(RepFunc)
+
+PrimFunc <- names(RepFunc[RepFunc==TRUE])
+PrimFunc
+```
+
+#### 2. What are valid names for user-created infix functions?
+Anything that starts and ends with `% %`
+
+#### 3. Create an infix xor() operator.
+```{r}
+`%xor%` <- function(x,y){
+  (x|y) & !(x&y)
+}
+
+1 %xor% 1
+```
+
+#### 4. Create infix versions of the set functions intersect(), union(), and setdiff().
+```{r}
+# test number
+t1 <- c(1,15,13,1,2,3,4,5,55)
+t2 <- c(1,4,55,66,88,99)
+
+#intersect
+`%inter%` <- function(x,y){
+  unique(c(x[x %in% y], y[y %in% x]))
+}
+
+t1 %inter% t2
+
+#union
+`%uni%` <- function(x,y){
+  unique(c(x,y))
+}
+
+t1 %uni% t2
+
+#setdiff
+`%setd%` <- function(x,y){
+  x[!x %in% y]
+}
+
+t1 %setd% t2
+```
+
+
+#### 5. Create a replacement function that modifies a random location in a vector.
+```{r}
+`random.replace<-` <- function(x, value){
+  x[sample(length(x), 1)] <- value
+  x
+}
+
+test <- 1:5
+random.replace(test) <- 25
+test
+```
+
+## On Exit
+### Exercises
+#### 1. How does the chdir parameter of source() compare to in_dir()? Why might you prefer one approach to the other?
+```{r}
+in_dir <- function(dir, code) {
+  old <- setwd(dir)
+  on.exit(setwd(old))
+  
+  force(code)
+}
+```
+
+When using in_dir you can set the working directory to change back to the original using the on.exit paramater.  
+
+#### 2. What function undoes the action of library()? How do you save and restore the values of options() and par()?
+
+```{r}
+# detach()
+```
+
+#### 3. Write a function that opens a graphics device, runs the supplied code, and closes the graphics device (always, regardless of whether or not the plotting code worked).
+```{r}
+plot_pdf <- function(code){
+  pdf("test.pdf")
+  on.exit(dev.off())
+  code
+  }
+```
+
+#### 4.We can use on.exit() to implement a simple version of capture.output().
+##### Compare capture.output() to capture.output2(). How do the functions differ? What features have I removed to make the key ideas easier to see? How have I rewritten the key ideas to be easier to understand?
+```{r}
+capture.output2 <- function(code) {
+  temp <- tempfile()
+  on.exit(file.remove(temp), add = TRUE)
+
+  sink(temp)
+  on.exit(sink(), add = TRUE)
+
+  force(code)
+  readLines(temp)
+}
+capture.output2(cat("a", "b", "c", sep = "\n"))
+
+body(capture.output)
+body(capture.output2)
+```
+Capture.output2 is much shorter than capature.output. This makes capture.output2 easier to read but it could potentially sacrifice functionality.
+
+# Wickham functional programming
+```{r }
+### 1. Given a function, like "mean", match.fun() lets you find a function. Given a function, can you find its name? Why doesn't that make sense in R?
+### you cannot find its name because functions do not have to have names in R, such as anonymous functions.
+
+### 2. Use lapply() and an anonymous function to find the coefficient of variation (the standard deviation divided by the mean) for all columns in the mtcars dataset.
+lapply(mtcars, function(x) sd(x)/mean(x))
+
+### 3. integration
+integrate(function(x) x ^ 2 - x, 0, 10)
+integrate(function(x) sin(x) + cos(x), -pi, pi)
+integrate(function(x) exp(x) / x, 10, 20)
+
+### 4. ...
+
+### 1. Why are functions created by other functions called closures?
+# Closures get their name because they enclose the environment of the parent function and can access all its variables.
+
+### 2. What does the following statistical function do? What would be a better name for it? (The existing name is a bit of a hint.)
+### the function is a Box-Cox transformation
+
+### 3. What does approxfun() do? What does it return?
+### it returns a function performing the linear (or constant) interpolation, which puts data of given coordinates into current data
+
+### 4. What does ecdf() do? What does it return?
+### returns a function that calculates the empirical cumulative distribution of a given observed discrete distribution.
+
+### 5. Create a function that creates functions that compute the ith central moment of a numeric vector.
+moment <- function(n){
+  function(X){
+    a <-mean((X-mean(X))^n)
+    return(a)
+  }
+}
+m1 <- moment(1)
+m2 <- moment(2)
+
+X <- runif(100)
+stopifnot(all.equal(m1(X), 0))
+stopifnot(all.equal(m2(X), var(X) * 99 / 100))
+
+
+### 6. Create a function pick() that takes an index, i, as an argument and returns a function with an argument x that subsets x with i.
+pick <- function(i) {
+  function(x){
+    return(x[[i]])
+  }
+}
+lapply(mtcars, pick(5))
+# should do the same as this
+lapply(mtcars, function(x) x[[5]])
+
+### 1. Implement a summary function that works like base::summary(), but uses a list of functions. Modify the function so it returns a closure, making it possible to use it as a function factory.
+functlist <- list(min, median, mean, max)
+sumfuns <- function(afunclist){
+  function(x) lapply(afunclist, function(f) f(x))
+}
+summary1 <- sumfuns(functlist)
+sapply(mtcars, summary1)
+### 2. Which of the following commands is equivalent to with(x, f(z))?
+###    I think it is b.
+#x$f(x$z).
+#f(x$z).
+#x$f(z).
+#f(z).
+#It depends.
+
+### 1. Instead of creating individual functions (e.g., midpoint(), trapezoid(), simpson(), etc.), we could store them in a list. If we did that, how would that change the code? Can you create the list of functions from a list of coefficients for the Newton-Cotes formulae?
+
+## define composite 
+composite <- function(f, a, b, n = 10, rule) {
+  points <- seq(a, b, length = n + 1)
+  
+  area <- 0
+  for (i in seq_len(n)) {
+    area <- area + rule(f, points[i], points[i + 1])
+  }
+  area
+}
+### define newton_cotes
+newton_cotes <- function(coef, open = FALSE) {
+  n <- length(coef) -1            ### note that Wickham's orginal codes is wrong. need to -1 here. 
+  
+  function(f, a, b) {
+    pos <- function(i) a + i * (b - a) / n
+    points <- pos(seq.int(0, length(coef)-1))
+    (b - a) / sum(coef) * sum(f(points) * coef)
+  }
+}
+### use newton_cotes to create trepazoid, midpoint and simpson
+trepazoid <- newton_cotes(c(1,1))
+midpoint <- newton_cotes(c(0,1,0))
+simpson <- newton_cotes(c(1,4,1))
+composite(sin, 0, pi, n = 10, rule = trepazoid)
+composite(sin, 0, pi, n = 10, rule = midpoint)
+composite(sin, 0, pi, n = 10, rule = simpson)
+
+### 2. The trade-off between integration rules is that more complex rules are slower to compute, but need fewer pieces. For sin() in the range [0, ??], determine the number of pieces needed so that each rule will be equally accurate. Illustrate your results with a graph. How do they change for different functions? sin(1 / x^2) is particularly challenging.
+numbervect <- c()
+variancevect <- c()
+for (i in 10:1000){
+  t <- composite(sin, 0, pi, n = i, rule = trepazoid)
+  m <- composite(sin, 0, pi, n = i, rule = midpoint)
+  s <- composite(sin, 0, pi, n = i, rule = simpson)
+  if (var(c(t,m,s)) > 0.000001){      ### it depends on what you mean by "equally accurate". var < 0.000001 is used
+    numbervect <- c(numbervect, i)
+    variancevect <- c(variancevect,var(c(t,m,s)))
+  }
+  else {
+    break
+  }
+}
+plot(numbervect, variancevect)
+### so it looks like when the number of pieces is more than 35, the three methods tend to agree with each other with difference smaller than 0.000001
+numbervect <- c()
+variancevect <- c()
+functionx <- function(x){
+  return(sin(1 / x^2))
+}
+for (i in 2:20){
+  t <- composite(functionx, pi, 6, n = i, rule = trepazoid)
+  m <- composite(functionx, pi, 6, n = i, rule = midpoint)
+  s <- composite(functionx, pi, 6, n = i, rule = simpson)
+  if (var(c(t,m,s)) > 0.000001){      ### it depends on what you mean by "equally accurate". var < 0.000001 is used
+    numbervect <- c(numbervect, i)
+    variancevect <- c(variancevect,var(c(t,m,s)))
+  }
+  else{
+    break
+  }
+}
+plot(numbervect,variancevect)
+## the answer to this question depends on which part of the functionx we are integrating over. if we want to integrate over places near zero, things get super complicated. but if we are integrating over places far away from zero, it looks that it only takes 5 pieces for the three selected methods to agree with an accuracy of 0.000001 level. 
+```
+
+
+
+# Slide Questions
+### 1. use rbenchmark package to assess if there is any performance difference between using apply, sapply, lapply, and a for loop. 
+```{r }
+setwd("/Users/qihao/OneDrive/?????????/PLS900")
+load("polity_dataframe.rda")
+
+### write a function called functiona to do the descriptive data
+functiona <-function(alist){
+  n = length(alist)
+  numberNA = sum(is.na(alist))
+  b = mean(alist, na.rm = T)
+  c = median(alist, na.rm = T)
+  d = max(alist, na.rm = T)
+  e = min(alist, na.rm = T)
+  f = sd(alist, na.rm = T)
+  return(c(n,numberNA,b,c,d,e,f ))
+}
+
+### create a function for each of sapply, apply, lapply and for loop
+sapplydf <- function(adataframe){
+  df <- sapply(adataframe, functiona)
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+applydf <- function(adataframe){
+  df <- apply(adataframe, 2, functiona)
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+lapplydf <- function(adataframe){
+  df <- do.call(cbind, lapply(adataframe,functiona))
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+fordf <- function(avector){
+  df <- data.frame(democ = rep(0,7),autoc = rep(0,7), polity2 = rep(0,7), xconst = rep(0,7))
+  for (i in avector){
+    df[,i] <- functiona(polity[,i])
+}
+  rownames(df) <- c("n","numberNA", "mean","median","max","min","stdev")
+  return(df)
+}
+
+### use benchmark to find out how they excel/suck
+library(rbenchmark)
+df <-polity[,c('democ','autoc','polity2','xconst')]
+avect <- c('democ','autoc','polity2','xconst')
+benchmark(replications = 10, fordf(avect),sapplydf(df),applydf(df),lapplydf(df))
+
+```
+#### use tapply and dplyr to calculate the mean, median, and stdev of democ and xconst for every year in the polity dataframe object
+```{r }
+library(dplyr)
+### in the slides Shahryar showed democ but in the instruction said polity2, not sure which one, just go with democ
+selecteddata <- group_by(polity[,c("year","democ","xconst")], year)
+### I figured once i use summarise_all, i don't have to use tapply
+by_year <- summarise_all(selecteddata, mean, na.rm = T)
+
+by_year_me <- summarise_all(selecteddata, median, na.rm = T)
+
+by_year_sd <- summarise_all(selecteddata, sd, na.rm = T)
+
+result <- cbind(by_year,by_year_me[,2:3])
+result <- cbind(result, by_year_sd[,2:3])
+colnames(result) <- c("year","democ_mean","xconst_mean","democ_median","xconst_median","democ_sd","xconst_sd")
+result
+```
+
