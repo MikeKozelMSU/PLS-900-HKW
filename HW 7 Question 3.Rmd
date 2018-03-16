@@ -1,0 +1,102 @@
+---
+title: "HW- 7"
+author: "Qi Hao"
+date: "3/15/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Question 3. from here on till the separation line below, are all from the midterm code, can be replaced with any code that outputs the final merged data
+=============================================================================================================
+```{r}
+# read in data
+setwd("/Users/qihao/OneDrive/博三下/PLS900/midterm")
+load('Dyadicdata.RData')
+ls()     ### so the data is loaded in as "x", not sure why
+Dyadata <- x[which(x$ccode1==2),]  ### isolate only to ccode1 == USA
+
+library(foreign)
+y <- read.dta('EPR3CountryNewReduced.dta')  ### y is the EPR3 data frame
+
+polity <- read.csv('p4v2016.csv', stringsAsFactors = F)
+
+load('LJI-estimates-20140422.RData')
+## again it is loaded in as x, so i'll rename it again
+ljidata <- x
+```
+
+```{r}
+# merge data
+library(countrycode) 
+Dyadata$cname <- countrycode(sourcevar=Dyadata$ccode2,origin="cown", destination='country.name')
+y$country <- countrycode(sourcevar=y$cowcode,origin="cown", destination='country.name')
+### according to the code book, the country code was in the "cow" format
+
+### create the match variable, country_year
+Dyadata$cyear <- paste( Dyadata$cname, Dyadata$year, sep='_')
+y$cyear <- paste( y$country, y$year, sep='_')
+
+# merge in from y
+for (i in c("lmtnest", 'exclpop', 'ethfrac')){
+  Dyadata[,i] <- y[,i][ match(Dyadata$cyear, y$cyear )]
+}
+# merge in from polity
+### first, create binary variables bidemoc and biautoc
+polity$bidemoc <- ifelse(polity$polity2 >= 6, 1, 0 )
+polity$biautoc <- ifelse(polity$polity2 <= -6, 1, 0)
+polity$country <- countrycode(sourcevar=polity$country,origin="country.name", destination='country.name')
+polity$cyear <- paste( polity$country, polity$year, sep='_')
+Dyadata[,"bidemoc"] <- polity[,'bidemoc'][ match(Dyadata$cyear, polity$cyear )]
+Dyadata[,"biautoc"] <- polity[,'biautoc'][ match(Dyadata$cyear, polity$cyear )]
+# merge in from ljidata
+ljidata$X.country. <- countrycode(ljidata$X.ccode., "cown", "country.name")
+ljidata$cyear <- paste(ljidata$X.country., ljidata$X.year., sep = "_")
+Dyadata[,"lji"]<- ljidata[,"X.LJI."][ match(Dyadata$cyear, polity$cyear )]
+merged_data <- Dyadata[,c("ccode2","year","absidealdiff","cyear","lmtnest","exclpop","ethfrac","bidemoc","biautoc","lji")]
+head(merged_data)
+```
+
+```{r}
+# prepare data
+for (i in c("lmtnest","exclpop","ethfrac","bidemoc","biautoc","lji")){
+  merged_data <- merged_data[which(!is.na(merged_data[,i])),]
+}
+nrow(merged_data)  ### rows has no missing value
+```
+# up till here are all from mid-term code. can be replaced with any code that outputs the final merged data
+# =======================================================================================================
+# create a function called substantive that takes the beta name and outputs the uncertainty graph 
+```{r}
+substantive <- function(betaname) {
+  min <- min(merged_data[,betaname])
+  max <- max(merged_data[,betaname])
+  Values = seq(min, max, length.out=100) 
+  scenario = cbind(intercept=rep(1,100), lmtnest=mean(merged_data$lmtnest), exclpop = mean(merged_data$exclpop), ethfrac=mean(merged_data$ethfrac))
+  scenario[,betaname] <- Values
+  yPred = scenario %*% betaMean
+  yPredUncert = scenario %*% t(betaDraws) 
+  yPredInt = apply(yPredUncert, 1, function(x){quantile(x, c(0.025, 0.975), na.rm=TRUE) }) 
+  yPredInt <- t(yPredInt)
+  simAnalysis = data.frame(betaname=Values, yPred=yPred, yPredInt) 
+  names(simAnalysis)[3:4] = c('q95lo','q95hi')
+  
+  ggplot(simAnalysis, aes(x=betaname, y=yPred)) + geom_line() + geom_ribbon(aes(ymin=q95lo, ymax=q95hi), alpha=.6)
+}
+```
+
+```{r}
+substantive('lmtnest')
+# so this beta estimate is not a good one because the ribon is too wide and the linear relation (beta) is too weak.
+```
+```{r}
+substantive('exclpop')
+# this is better than the first one. although the uncertainty towards the end is getting bigger. in the beginning it is doing fine.
+```
+```{r}
+substantive('ethfrac')
+# this is the best estimate. the ribon is narrow so the uncertainty is low.
+```
+## R Markdown
+
