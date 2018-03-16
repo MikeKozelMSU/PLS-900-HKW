@@ -2,7 +2,9 @@
 title: "HW- 7"
 author: "Qi Hao"
 date: "3/15/2018"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,6 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # read in data
 setwd("/Users/qihao/OneDrive/博三下/PLS900/midterm")
+library(MASS)
+library(ggplot2)
 load('Dyadicdata.RData')
 ls()     ### so the data is loaded in as "x", not sure why
 Dyadata <- x[which(x$ccode1==2),]  ### isolate only to ccode1 == USA
@@ -67,6 +71,15 @@ nrow(merged_data)  ### rows has no missing value
 ```
 # up till here are all from mid-term code. can be replaced with any code that outputs the final merged data
 # =======================================================================================================
+# now start to test test the uncertainty of the parameters, i choose model 2
+```{r}
+model_2 <- "absidealdiff ~ lmtnest + exclpop + ethfrac"
+lmoutput <- lm( model_2, merged_data)
+
+betaMean = coef(lmoutput)
+betaDist = vcov(lmoutput)
+betaDraws = mvrnorm(1000, betaMean, betaDist)
+```
 # create a function called substantive that takes the beta name and outputs the uncertainty graph 
 ```{r}
 substantive <- function(betaname) {
