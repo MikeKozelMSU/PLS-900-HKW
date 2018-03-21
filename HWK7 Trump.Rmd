@@ -1,0 +1,74 @@
+---
+title: "Trump Plot"
+author: "Ross Walker, Mike Kozel, Qi Hao"
+date: "3/21/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Replicate the last plot from https://fivethirtyeight.com/features/what-the-world-thinks-of-trump/
+
+Note: Fonts were shrunken to appear clean on the knitted HTML rather than in RStudio output.
+
+```{r}
+suppressMessages(library(reshape2))
+suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
+
+urls <- paste0("https://raw.githubusercontent.com/fivethirtyeight/data/master/trump-world-trust/TRUMPWORLD-issue-", 1:5, ".csv")
+
+datalist = lapply(urls, function(x){read.csv(file = x, header = T, stringsAsFactors = F)})
+names(datalist) <- c('climate_change', 'wall', 'Iran', 'trade', 'Muslim_travel')
+
+regions <- list(
+  `Europe and Russia` = c('France', "Germany", "Greece", "Hungary", "Italy", "Netherlands", "Poland", "Spain", "Sweden", "United Kingdom", "Russia"),
+  `Middle East and Africa` = c("Israel", "Jordan", "Lebanon", "Tunisia", "Turkey", "Ghana", "Kenya", "Nigeria", "Senegal", "South Africa", "Tanzania"),
+  `South America and Mexico` = c("Argentina", "Brazil", "Chile", "Colombia", "Mexico", "Peru", "Venezuela"),
+  `Asia` = c("India", "Indonesia", "Japan", "Philippines", "South Korea", "Vietnam")
+)
+for(i in 1:length(datalist)){
+  colnames(datalist[[i]])[2] <- names(datalist)[i]
+  datalist[[i]] <- datalist[[i]][1:2]
+}
+
+main <- Reduce(function(x,y) {merge(x , y, by = 'country')}, datalist)
+main <- main[-which(main$country %in% c("Canada", "Australia")), ]
+main$region <- sapply(main$country, function(y){
+  names(regions)[unlist(lapply(regions, function(x){
+    return(y %in% x)
+  }))]
+}) %>%
+  unlist
+
+suppressMessages(gg <- melt(main))
+gg$region <- as.factor(gg$region)
+levels(gg$region) <- c("Asia", "Europe\nand Russia", "Middle East\nand Africa", "South America\nand Mexico")
+levels(gg$variable) <- c("Withdraw from global climate change agreements", "Build a wall between the U.S. and Mexico", "Withdraw from Iran nuclear weapons agreement", "Withdraw from major trade agreements", "Restrict travel from some majority-Muslim countries")
+
+ggplot(gg, aes(x = value, y = region, fill = factor(region))) + 
+  geom_point(shape = 21, size = 3, alpha = .5, aes(stroke = ifelse(country %in% c("Russia", "Germany", "Israel", "Turkey", "Brazil", "Mexico", "Indonesia", "South Korea"), 1, 0))) +
+  geom_text(aes(label = ifelse(country %in% c("Russia", "Germany", "Israel", "Turkey", "Brazil", "Mexico", "Indonesia", "South Korea"), as.character(country), ""), vjust = ifelse(country %in% c("Russia", "Israel", "Brazil", "Indonesia"), -1, 2)), hjust= "inward", color = "grey", size = 3) + 
+  geom_vline(xintercept = 0, color = "grey") +
+  geom_vline(data = gg %>% group_by(variable) %>% summarise(avg = mean(value, na.rm = T)), aes(xintercept = avg), color = "grey", linetype="dotted") +
+  theme_light() +
+  ggtitle(label = "What do people in other countries think of Trump's proposed policies?", subtitle = "Net approval rating for Trump's proposed policy to...") +
+  facet_wrap(~variable, nrow = 1, labeller=label_wrap_gen()) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(color = "black", size = 12, hjust = 0),
+    axis.line.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "none",
+    strip.background = element_rect(fill="white"),
+    strip.text = element_text(color = "black", size = 7),
+    plot.title = element_text(size=12, hjust=0.5, face="bold", colour="black", vjust=-1),
+    plot.subtitle = element_text(size=12, hjust=0.5, color="black")
+  )
+```
