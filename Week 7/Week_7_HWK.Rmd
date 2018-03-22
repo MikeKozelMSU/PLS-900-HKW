@@ -1,0 +1,259 @@
+---
+title: "Week 7 HWK"
+author: "Ross Walker, Mike Kozel, Qi Hao"
+date: "March 21, 2018"
+output: html_document
+---
+# Plot 1
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Replicate the last plot from https://fivethirtyeight.com/features/what-the-world-thinks-of-trump/
+
+Note: Fonts were shrunken to appear clean on the knitted HTML rather than in RStudio output.
+
+```{r}
+suppressMessages(library(reshape2))
+suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
+
+urls <- paste0("https://raw.githubusercontent.com/fivethirtyeight/data/master/trump-world-trust/TRUMPWORLD-issue-", 1:5, ".csv")
+
+datalist = lapply(urls, function(x){read.csv(file = x, header = T, stringsAsFactors = F)})
+names(datalist) <- c('climate_change', 'wall', 'Iran', 'trade', 'Muslim_travel')
+
+regions <- list(
+  `Europe and Russia` = c('France', "Germany", "Greece", "Hungary", "Italy", "Netherlands", "Poland", "Spain", "Sweden", "United Kingdom", "Russia"),
+  `Middle East and Africa` = c("Israel", "Jordan", "Lebanon", "Tunisia", "Turkey", "Ghana", "Kenya", "Nigeria", "Senegal", "South Africa", "Tanzania"),
+  `South America and Mexico` = c("Argentina", "Brazil", "Chile", "Colombia", "Mexico", "Peru", "Venezuela"),
+  `Asia` = c("India", "Indonesia", "Japan", "Philippines", "South Korea", "Vietnam")
+)
+for(i in 1:length(datalist)){
+  colnames(datalist[[i]])[2] <- names(datalist)[i]
+  datalist[[i]] <- datalist[[i]][1:2]
+}
+
+main <- Reduce(function(x,y) {merge(x , y, by = 'country')}, datalist)
+main <- main[-which(main$country %in% c("Canada", "Australia")), ]
+main$region <- sapply(main$country, function(y){
+  names(regions)[unlist(lapply(regions, function(x){
+    return(y %in% x)
+  }))]
+}) %>%
+  unlist
+
+suppressMessages(gg <- melt(main))
+gg$region <- as.factor(gg$region)
+levels(gg$region) <- c("Asia", "Europe\nand Russia", "Middle East\nand Africa", "South America\nand Mexico")
+levels(gg$variable) <- c("Withdraw from global climate change agreements", "Build a wall between the U.S. and Mexico", "Withdraw from Iran nuclear weapons agreement", "Withdraw from major trade agreements", "Restrict travel from some majority-Muslim countries")
+
+ggplot(gg, aes(x = value, y = region, fill = factor(region))) + 
+  geom_point(shape = 21, size = 3, alpha = .5, aes(stroke = ifelse(country %in% c("Russia", "Germany", "Israel", "Turkey", "Brazil", "Mexico", "Indonesia", "South Korea"), 1, 0))) +
+  geom_text(aes(label = ifelse(country %in% c("Russia", "Germany", "Israel", "Turkey", "Brazil", "Mexico", "Indonesia", "South Korea"), as.character(country), ""), vjust = ifelse(country %in% c("Russia", "Israel", "Brazil", "Indonesia"), -1, 2)), hjust= "inward", color = "grey", size = 3) + 
+  geom_vline(xintercept = 0, color = "grey") +
+  geom_vline(data = gg %>% group_by(variable) %>% summarise(avg = mean(value, na.rm = T)), aes(xintercept = avg), color = "grey", linetype="dotted") +
+  theme_light() +
+  ggtitle(label = "What do people in other countries think of Trump's proposed policies?", subtitle = "Net approval rating for Trump's proposed policy to...") +
+  facet_wrap(~variable, nrow = 1, labeller=label_wrap_gen()) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(color = "black", size = 12, hjust = 0),
+    axis.line.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "none",
+    strip.background = element_rect(fill="white"),
+    strip.text = element_text(color = "black", size = 7),
+    plot.title = element_text(size=12, hjust=0.5, face="bold", colour="black", vjust=-1),
+    plot.subtitle = element_text(size=12, hjust=0.5, color="black")
+  )
+```
+
+# Plot 2
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+library(magrittr)
+library(tidyr)
+library(purrr)
+library(ggjoy)
+library(ggridges)
+library(scales)
+library(MASS)
+library(grid)
+
+
+# hwk 2
+# recreate 2nd plot
+# ignore all polls button, for extra credit you can add it
+
+# graph the upper and lower trend line
+# add the *ribbon* 
+# add plots on top 
+# indicate 50% mark and make sure axis are same 
+# get text on the right added
+
+
+topline <- read.csv('approval_topline.csv')
+poll <- read.csv('approval_polllist.csv')
+
+head(topline)
+
+
+top <- topline %>% 
+  filter(
+    subgroup == 'All polls'
+  )
+
+df <- poll %>%
+  filter(
+    subgroup == 'All polls'
+  )
+
+df$date <- format(as.Date(strptime(df$timestamp, '%H:%M:%S %d %b %Y')), '%d %b %Y')
+df$date <- as.Date(df$date, '%d %b %Y')
+
+df$date <- as.Date(df$startdate, '%m/%d/%Y')
+
+top$date <- format(as.Date(strptime(top$timestamp, '%H:%M:%S %d %b %Y')), '%d %b %Y')
+
+top$date <- as.Date(top$date, '%d %b %Y')
+
+min <- as.Date('2017-1-23')
+max <- as.Date('2018-1-23')
+
+top$approve = top$approve_estimate
+top$disapprove = top$disapprove_estimate
+
+ggplot() +
+  geom_line(data=top, aes(x=date, y=approve_estimate, group=subgroup, color='Approve'), size = 1) +
+  geom_line(data=top, aes(x=date, y=top$disapprove_estimate, group=subgroup, color='Disapprove'), size=1) +
+  geom_point(data=df, aes(x=date, y=df$adjusted_approve), color='dark green', alpha= .15) +
+  geom_point(data=df, aes(x=date, y=df$adjusted_disapprove), color='dark orange', alpha=.15) +
+  geom_ribbon(data=top, aes(x=date, ymin=top$approve_hi, ymax=top$approve_lo), alpha=0.1, color=NA) +
+  geom_ribbon(data=top, aes(x=date, ymin=top$disapprove_lo, ymax=top$disapprove_hi), alpha=0.1, color=NA) +
+  scale_y_continuous('', breaks = seq(20, 80, 10), limits = c(20,80)) +
+  scale_x_date(breaks = seq(as.Date('2017-1-23'), as.Date('2018-1-23'), by='2 months'),  labels = date_format('%b %d')) +
+  scale_color_manual(values = c('Approve'='dark green','Disapprove'='dark orange')) +
+  theme_bw() +
+  theme(
+    axis.ticks = element_blank(),
+    legend.title = element_blank(),
+    panel.border = element_rect(linetype = 'dashed', fill=NA)
+  ) +
+  geom_hline(yintercept = 50)
+```
+
+# Plot 3
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Question 3. from here on till the separation line below, are all from the midterm code, can be replaced with any code that outputs the final merged data
+=============================================================================================================
+```{r}
+# read in data
+setwd("/Users/qihao/OneDrive/?????????/PLS900/midterm")
+library(MASS)
+library(ggplot2)
+load('Dyadicdata.RData')
+ls()     ### so the data is loaded in as "x", not sure why
+Dyadata <- x[which(x$ccode1==2),]  ### isolate only to ccode1 == USA
+
+library(foreign)
+y <- read.dta('EPR3CountryNewReduced.dta')  ### y is the EPR3 data frame
+
+polity <- read.csv('p4v2016.csv', stringsAsFactors = F)
+
+load('LJI-estimates-20140422.RData')
+## again it is loaded in as x, so i'll rename it again
+ljidata <- x
+```
+
+```{r}
+# merge data
+library(countrycode) 
+Dyadata$cname <- countrycode(sourcevar=Dyadata$ccode2,origin="cown", destination='country.name')
+y$country <- countrycode(sourcevar=y$cowcode,origin="cown", destination='country.name')
+### according to the code book, the country code was in the "cow" format
+
+### create the match variable, country_year
+Dyadata$cyear <- paste( Dyadata$cname, Dyadata$year, sep='_')
+y$cyear <- paste( y$country, y$year, sep='_')
+
+# merge in from y
+for (i in c("lmtnest", 'exclpop', 'ethfrac')){
+  Dyadata[,i] <- y[,i][ match(Dyadata$cyear, y$cyear )]
+}
+# merge in from polity
+### first, create binary variables bidemoc and biautoc
+polity$bidemoc <- ifelse(polity$polity2 >= 6, 1, 0 )
+polity$biautoc <- ifelse(polity$polity2 <= -6, 1, 0)
+polity$country <- countrycode(sourcevar=polity$country,origin="country.name", destination='country.name')
+polity$cyear <- paste( polity$country, polity$year, sep='_')
+Dyadata[,"bidemoc"] <- polity[,'bidemoc'][ match(Dyadata$cyear, polity$cyear )]
+Dyadata[,"biautoc"] <- polity[,'biautoc'][ match(Dyadata$cyear, polity$cyear )]
+# merge in from ljidata
+ljidata$X.country. <- countrycode(ljidata$X.ccode., "cown", "country.name")
+ljidata$cyear <- paste(ljidata$X.country., ljidata$X.year., sep = "_")
+Dyadata[,"lji"]<- ljidata[,"X.LJI."][ match(Dyadata$cyear, polity$cyear )]
+merged_data <- Dyadata[,c("ccode2","year","absidealdiff","cyear","lmtnest","exclpop","ethfrac","bidemoc","biautoc","lji")]
+head(merged_data)
+```
+
+```{r}
+# prepare data
+for (i in c("lmtnest","exclpop","ethfrac","bidemoc","biautoc","lji")){
+  merged_data <- merged_data[which(!is.na(merged_data[,i])),]
+}
+nrow(merged_data)  ### rows has no missing value
+```
+# up till here are all from mid-term code. can be replaced with any code that outputs the final merged data
+# =======================================================================================================
+# now start to test test the uncertainty of the parameters, i choose model 2
+```{r}
+model_2 <- "absidealdiff ~ lmtnest + exclpop + ethfrac"
+lmoutput <- lm( model_2, merged_data)
+
+betaMean = coef(lmoutput)
+betaDist = vcov(lmoutput)
+betaDraws = mvrnorm(1000, betaMean, betaDist)
+```
+# create a function called substantive that takes the beta name and outputs the uncertainty graph 
+```{r}
+substantive <- function(betaname) {
+  min <- min(merged_data[,betaname])
+  max <- max(merged_data[,betaname])
+  Values = seq(min, max, length.out=100) 
+  scenario = cbind(intercept=rep(1,100), lmtnest=mean(merged_data$lmtnest), exclpop = mean(merged_data$exclpop), ethfrac=mean(merged_data$ethfrac))
+  scenario[,betaname] <- Values
+  yPred = scenario %*% betaMean
+  yPredUncert = scenario %*% t(betaDraws) 
+  yPredInt = apply(yPredUncert, 1, function(x){quantile(x, c(0.025, 0.975), na.rm=TRUE) }) 
+  yPredInt <- t(yPredInt)
+  simAnalysis = data.frame(betaname=Values, yPred=yPred, yPredInt) 
+  names(simAnalysis)[3:4] = c('q95lo','q95hi')
+  
+  ggplot(simAnalysis, aes(x=betaname, y=yPred)) + geom_line() + geom_ribbon(aes(ymin=q95lo, ymax=q95hi), alpha=.6)
+}
+```
+
+```{r}
+substantive('lmtnest')
+# so this beta estimate is not a good one because the ribon is too wide and the linear relation (beta) is too weak.
+```
+```{r}
+substantive('exclpop')
+# this is better than the first one. although the uncertainty towards the end is getting bigger. in the beginning it is doing fine.
+```
+```{r}
+substantive('ethfrac')
+# this is the best estimate. the ribon is narrow so the uncertainty is low.
+```
+## R Markdown
