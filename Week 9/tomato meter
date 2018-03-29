@@ -1,0 +1,30 @@
+gross = page %>%  
+  html_nodes("#Top-Box-Office .right a") %>% 
+  html_text()
+
+df = data.frame(title, gross, stringsAsFactors = F)
+df[1:5,]
+
+df1 <- str_replace_all(df, "M","")
+df1 <- str_replace_all(df1, "\\$", "")
+gross_clean <- str_replace_all(df$gross, "M","")
+gross_clean <- str_replace_all(gross_clean, "\\$", "")
+gross_clean
+gross_clean <- str_trim(gross_clean)
+gross_clean <- as.numeric(gross_clean)
+gross_clean <- gross_clean*1000000
+df$gross <- gross_clean
+
+tmeter = page %>%  
+  html_nodes("#Top-Box-Office .tMeterScore") %>% 
+  html_text()
+
+t <- str_replace_all(tmeter, "\\%", "")
+t <- as.numeric(t)
+t <- t/100
+
+df$tmeter <- t
+
+rating <- page %>% 
+  html_nodes("#Top-Box-Office .tiny") %>%
+  html_text
