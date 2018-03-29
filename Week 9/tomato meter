@@ -1,3 +1,19 @@
+rt = 'https://www.rottentomatoes.com/'
+page = read_html(rt)
+
+page %>% 
+  html_nodes(
+    xpath = '//*[(@id = "Top-Box-Office")]//*[contains(concat( " ", @class, " " ), concat( " ", "middle_col", " " ))]//a'
+  )
+page %>% 
+  html_nodes("#Top-Box-Office .middle_col a")
+
+title= page %>% 
+  html_nodes("#Top-Box-Office .middle_col a") %>% 
+  html_text()
+
+title
+
 gross = page %>%  
   html_nodes("#Top-Box-Office .right a") %>% 
   html_text()
@@ -27,4 +43,19 @@ df$tmeter <- t
 
 rating <- page %>% 
   html_nodes("#Top-Box-Office .tiny") %>%
-  html_text
+  html_attr('class')
+
+r <- str_replace_all(rating, "icon tiny", "")
+
+df$rating <- r
+
+# download.file(url)
+
+url <- page %>%
+  html_nodes("#Top-Box-Office .middle_col a") %>%
+  html_attr("href")
+
+url <- paste0("https://www.rottentomatoes.com", url)
+
+df$url <- url
+
